@@ -888,5 +888,18 @@ setInterval(() => {
 })();
 </script>
     
-  </body>
+  
+<style>
+#beach-welcome{border:1px solid #ffffff55;border-radius:24px;padding:30px 26px;max-width:min(390px,calc(100vw - 36px));width:390px;background:#223c43f2;color:#fff7e9;text-align:center;box-shadow:0 24px 80px #0005;font-size:16px;line-height:1.8}
+#beach-welcome::backdrop{background:#10242c66;backdrop-filter:blur(5px)}
+#beach-welcome p{margin:0 0 24px;word-break:keep-all}
+#beach-welcome button{border:0;border-radius:16px;padding:11px 35px;background:#f3dfbf;color:#364447;font-size:16px;min-height:44px}
+</style>
+<dialog id="beach-welcome" aria-label="해변 이용 안내" aria-describedby="beach-welcome-text">
+<p id="beach-welcome-text">드래그로 둘러보고<br>아이콘을 바다와 하늘에 배치해 보세요.<br>모래 글씨로 작은 추억도 새기세요.</p>
+<form method="dialog"><button autofocus>확인</button></form>
+</dialog>
+<script>document.querySelector('#beach-welcome').showModal();</script>
+
+</body>
 </html>
