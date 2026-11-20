@@ -487,6 +487,7 @@ option {
 <button data-mold="round" aria-label="둥근 바가지" aria-pressed="false">🪣<span>둥근 ●</span></button>
 <button data-mold="triangle" aria-label="세모 바가지" aria-pressed="false">🪣<span>세모 ▲</span></button>
 <p>모래를 눌러 담고, 다시 눌러 부어요<br>만든 모래 위에도 쌓을 수 있어요</p></div><div class="sand-tools">
+<button id="reset-beach" class="sand-pen" aria-label="해변 전체 초기화">초기화</button>
 <button id="save-beach" class="sand-pen" aria-label="해변 저장" aria-live="polite">저장</button>
 <button data-place="write" class="sand-pen" aria-label="모래에 글씨 쓰기" aria-pressed="false">✎ 모래 글씨</button>
 <div id="sand-options" hidden><label for="sand-width">굵기</label><input id="sand-width" type="range" min="2" max="12" value="5" aria-label="모래 글씨 굵기"><button id="undo-writing" aria-label="마지막 글씨 획 취소" title="마지막 글씨 획 취소" disabled>↶</button><button id="clear-writing" aria-label="모래 글씨 지우기" disabled>글씨 지우기</button></div>
@@ -777,7 +778,7 @@ setInterval(() => {
   const assets={castle:true,yacht:sail,paraw:classic,outrigger,kayak,parasail};
   const names={castle:'모래성',yacht:'요트',paraw:'돛배',outrigger:'아웃리거',kayak:'투명 카약',parasail:'패러세일'};
   const storageKey='neri-explicit-save-v1';
-  let selected='pan',placed=[],history=[],nextId=1,bucketFull=false,scoopPoint=null,moldShape='square',pouring=false;
+  let selected='pan',placed=[],history=[],nextId=1,bucketFull=false,scoopPoint=null,moldShape='square',pouring=false,resetVersion=0;
   const bucketVisual=document.querySelector('#bucket-visual');
   function moveBucket(e){if(selected!=='castle'||pouring)return;bucketVisual.style.left=e.clientX+'px';bucketVisual.style.top=e.clientY+'px'}
   host.addEventListener('pointermove',moveBucket);host.addEventListener('pointerdown',moveBucket);
@@ -803,6 +804,13 @@ setInterval(() => {
   try{const saved=(JSON.parse(localStorage.getItem(sandKey)||'{}').strokes||[]);if(Array.isArray(saved))strokes=saved.filter(s=>Number.isFinite(s.width)&&Array.isArray(s.points)&&s.points.length&&s.points.every(p=>Array.isArray(p)&&p.length===2&&p.every(Number.isFinite)&&p[0]>=0&&p[0]<=1&&p[1]>=0&&p[1]<=1))}catch{}
   function sandButtons(){document.querySelector('#undo-writing').disabled=!sandHistory.length;document.querySelector('#clear-writing').disabled=!strokes.length;canvas.dataset.strokeCount=String(strokes.length)}
   function saveSand(){markUnsaved();sandButtons();inkDirty=true;dirty=true}
+  document.querySelector('#reset-beach').onclick=()=>{
+    if(!confirm('저장한 해변과 현재 배치, 모래 글씨를 모두 지울까요?'))return;
+    try{localStorage.removeItem(storageKey);localStorage.removeItem('neri-user-arrangement-v1');localStorage.removeItem('neri-sand-writing-v1')}
+    catch{bucketNotice('저장 기록을 지우지 못했어요. 브라우저 설정을 확인해주세요');return}
+    resetVersion++;placed=[];strokes=[];history=[];sandHistory=[];activeStroke=null;bucketFull=false;pouring=false;scoopPoint=null;
+    bucketVisual.classList.remove('filled','scooping','pouring');inkDirty=true;dirty=true;sandButtons();markUnsaved();choose('pan');updateTools();bucketNotice('저장 기록까지 초기화했어요. 빈 해변에서 다시 시작해요');
+  };
   document.querySelector('#save-beach').onclick=()=>{
     finishWriting();const button=document.querySelector('#save-beach');
     try{localStorage.setItem(storageKey,JSON.stringify({objects:placed.map(({born,...o})=>o),strokes}));button.textContent='저장됨';button.setAttribute('aria-label','해변 저장 완료')}
@@ -854,8 +862,8 @@ setInterval(() => {
       if(!point&&!support){bucketNotice('빈 모래나 이미 만든 모래 덩어리를 눌러주세요');return}
       const size=support?support.size*.92:.025+point[1]*.012;
       const item={id:nextId++,type:'castle',shape:moldShape,x:support?support.x:point[0],y:support?support.y:point[1],size,elevation:support?(support.elevation||0)+support.size*(support.shape==='round'? .51:support.shape==='triangle'?.69:.60):0,phase:nextId*2.31};
-      pouring=true;animateBucket('pouring');bucketFull=false;
-      setTimeout(()=>{checkpoint();placed.push(item);pouring=false;bucketVisual.classList.remove('filled','pouring');save();updateTools();bucketNotice(support?'위에 쌓았어요! 다시 담아서 더 쌓아보세요':'모래를 부었어요. 만든 모래를 누르면 위로 쌓을 수 있어요')},480);
+      pouring=true;animateBucket('pouring');bucketFull=false;const pourVersion=resetVersion;
+      setTimeout(()=>{if(pourVersion!==resetVersion)return;checkpoint();placed.push(item);pouring=false;bucketVisual.classList.remove('filled','pouring');save();updateTools();bucketNotice(support?'위에 쌓았어요! 다시 담아서 더 쌓아보세요':'모래를 부었어요. 만든 모래를 누르면 위로 쌓을 수 있어요')},480);
       return
     }
     if(selected==='parasail'){
