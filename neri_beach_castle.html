@@ -493,7 +493,7 @@ option {
 <div id="sand-options" hidden><label for="sand-width">굵기</label><input id="sand-width" type="range" min="2" max="12" value="5" aria-label="모래 글씨 굵기"><button id="undo-writing" aria-label="마지막 글씨 획 취소" title="마지막 글씨 획 취소" disabled>↶</button><button id="clear-writing" aria-label="모래 글씨 지우기" disabled>글씨 지우기</button></div>
 </div><p id="placement-hint" role="status">아이콘을 고른 뒤 원하는 곳을 눌러주세요</p>
 </section>
-<nav class="controls" aria-label="재생 제어"><button id="castle-view" class="icon-button" aria-label="모래성 바라보기">♜</button>
+<nav class="controls" aria-label="재생 제어"><button id="castle-view" class="icon-button" aria-label="바가지로 모래성 만들기" title="바가지로 모래성 만들기">♜</button>
 <button id="recenter" class="icon-button" aria-label="시선 정면으로 돌리기">⌖</button>
         <button id="enter" class="icon-button" aria-label="바다 소리 시작">
           ▷</button
@@ -772,7 +772,7 @@ setInterval(() => {
   host.addEventListener('wheel',e=>{e.preventDefault();zoom(scale*Math.exp(-e.deltaY*.001))},{passive:false});
   function reset(){scale=defaultScale;targetX=.50;targetY=.51;constrain();dirty=true}
   document.querySelector('#recenter').onclick=reset;
-  document.querySelector('#castle-view').onclick=()=>{scale=Math.min(maxScale,defaultScale*1.25);targetX=.23;targetY=.72;constrain();dirty=true};
+  document.querySelector('#castle-view').onclick=()=>choose(selected==='castle'?'pan':'castle');
   addEventListener('keydown',e=>{if(e.target.matches('input,select,textarea'))return;if(e.key==='ArrowLeft')targetX-=.045;else if(e.key==='ArrowRight')targetX+=.045;else if(e.key==='ArrowUp')targetY-=.045;else if(e.key==='ArrowDown')targetY+=.045;else if(e.key==='Home')reset();else return;e.preventDefault();constrain();dirty=true});
   // Scene objects belong to the user. No preset boats, kayaks or parasails.
   const assets={castle:true,yacht:sail,paraw:classic,outrigger,kayak,parasail};
