@@ -548,7 +548,18 @@ option {
       </section>
       <button id="returnUI" hidden aria-label="메뉴 표시">☷</button>
     </main>
-    <script>const $ = (s) => document.querySelector(s),
+    <div id="bucket-visual" hidden aria-hidden="true" data-shape="square"><svg viewBox="0 0 100 120" width="76" height="92"><path d="M22 36 C20 -3 80 -3 78 36" fill="none" stroke="#f0dcc0" stroke-width="6"/><path d="M16 34 L25 96 Q50 108 75 96 L84 34 Z" fill="#d89e72" stroke="#f4d6b0" stroke-width="3"/><ellipse cx="50" cy="34" rx="34" ry="9" fill="#815a40" stroke="#f4d6b0" stroke-width="3"/><ellipse class="bucket-sand" cx="50" cy="33" rx="29" ry="6" fill="#e6c699"/><text class="bucket-square" x="50" y="78" text-anchor="middle" fill="#fff0d2" font-size="32">■</text><text class="bucket-round" x="50" y="78" text-anchor="middle" fill="#fff0d2" font-size="32">●</text><text class="bucket-triangle" x="50" y="78" text-anchor="middle" fill="#fff0d2" font-size="32">▲</text></svg><div class="sand-stream"></div></div>
+<style>
+#bucket-visual{position:fixed;z-index:18;left:55%;top:70%;width:76px;height:92px;pointer-events:none;transform:translate(-30%,-90%);filter:drop-shadow(3px 8px 4px #47331f44);transform-origin:50% 80%}
+.bucket-sand,.bucket-round,.bucket-triangle{display:none}.filled .bucket-sand{display:block}
+[data-shape=round] .bucket-square,[data-shape=triangle] .bucket-square{display:none}[data-shape=round] .bucket-round,[data-shape=triangle] .bucket-triangle{display:block}
+#bucket-visual.scooping{animation:scoop-bucket .6s ease-in-out}#bucket-visual.pouring{animation:pour-bucket .65s ease-in-out}
+.sand-stream{display:none;position:absolute;width:10px;height:65px;left:65px;top:30px;background:repeating-linear-gradient(0deg,#edcc9a 0 3px,#b88f63 4px 5px,transparent 6px 8px);transform:rotate(-70deg);transform-origin:top;border-radius:40%;opacity:.9}.pouring .sand-stream{display:block;animation:sand-fall .48s linear}
+@keyframes scoop-bucket{0%,100%{transform:translate(-30%,-90%) rotate(0)}50%{transform:translate(-30%,-45%) rotate(-32deg)}}
+@keyframes pour-bucket{0%,100%{transform:translate(-30%,-90%) rotate(0)}30%,75%{transform:translate(-30%,-100%) rotate(105deg)}}
+@keyframes sand-fall{0%{height:0;opacity:0}30%{height:65px;opacity:1}100%{height:85px;opacity:0}}
+</style>
+<script>const $ = (s) => document.querySelector(s),
   world = $("#world");
 let ctx,
   audioOn = false,
@@ -947,17 +958,7 @@ setInterval(() => {
 #beach-welcome p{margin:0 0 24px;word-break:keep-all}
 #beach-welcome button{border:0;border-radius:16px;padding:11px 35px;background:#f3dfbf;color:#364447;font-size:16px;min-height:44px}
 </style>
-<div id="bucket-visual" hidden aria-hidden="true" data-shape="square"><svg viewBox="0 0 100 120" width="76" height="92"><path d="M22 36 C20 -3 80 -3 78 36" fill="none" stroke="#f0dcc0" stroke-width="6"/><path d="M16 34 L25 96 Q50 108 75 96 L84 34 Z" fill="#d89e72" stroke="#f4d6b0" stroke-width="3"/><ellipse cx="50" cy="34" rx="34" ry="9" fill="#815a40" stroke="#f4d6b0" stroke-width="3"/><ellipse class="bucket-sand" cx="50" cy="33" rx="29" ry="6" fill="#e6c699"/><text class="bucket-square" x="50" y="78" text-anchor="middle" fill="#fff0d2" font-size="32">■</text><text class="bucket-round" x="50" y="78" text-anchor="middle" fill="#fff0d2" font-size="32">●</text><text class="bucket-triangle" x="50" y="78" text-anchor="middle" fill="#fff0d2" font-size="32">▲</text></svg><div class="sand-stream"></div></div>
-<style>
-#bucket-visual{position:fixed;z-index:18;left:55%;top:70%;width:76px;height:92px;pointer-events:none;transform:translate(-30%,-90%);filter:drop-shadow(3px 8px 4px #47331f44);transform-origin:50% 80%}
-.bucket-sand,.bucket-round,.bucket-triangle{display:none}.filled .bucket-sand{display:block}
-[data-shape=round] .bucket-square,[data-shape=triangle] .bucket-square{display:none}[data-shape=round] .bucket-round,[data-shape=triangle] .bucket-triangle{display:block}
-#bucket-visual.scooping{animation:scoop-bucket .6s ease-in-out}#bucket-visual.pouring{animation:pour-bucket .65s ease-in-out}
-.sand-stream{display:none;position:absolute;width:10px;height:65px;left:65px;top:30px;background:repeating-linear-gradient(0deg,#edcc9a 0 3px,#b88f63 4px 5px,transparent 6px 8px);transform:rotate(-70deg);transform-origin:top;border-radius:40%;opacity:.9}.pouring .sand-stream{display:block;animation:sand-fall .48s linear}
-@keyframes scoop-bucket{0%,100%{transform:translate(-30%,-90%) rotate(0)}50%{transform:translate(-30%,-45%) rotate(-32deg)}}
-@keyframes pour-bucket{0%,100%{transform:translate(-30%,-90%) rotate(0)}30%,75%{transform:translate(-30%,-100%) rotate(105deg)}}
-@keyframes sand-fall{0%{height:0;opacity:0}30%{height:65px;opacity:1}100%{height:85px;opacity:0}}
-</style>
+
 <div id="bucket-notice" role="status" hidden style="position:fixed;z-index:20;top:20px;left:50%;transform:translateX(-50%);width:max-content;max-width:calc(100% - 100px);padding:12px 18px;border-radius:18px;background:#233c43ed;color:#fff4df;text-align:center;font-size:14px;pointer-events:none"></div>
 <dialog id="beach-welcome" aria-label="해변 이용 안내" aria-describedby="beach-welcome-text">
 <p id="beach-welcome-text">드래그로 둘러보고<br>아이콘을 바다와 하늘에 배치해 보세요.<br>모래성과 글씨로 작은 추억을 새기세요.<br>간직하고 싶을 때는 저장을 눌러주세요.</p>
