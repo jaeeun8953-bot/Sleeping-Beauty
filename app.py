@@ -12,7 +12,6 @@ html, body, .stApp {background:#152b33;}
 iframe {position:fixed!important;inset:0!important;width:100vw!important;height:100vh!important;height:100dvh!important;max-width:none!important;border:0;display:block;z-index:10;}
 </style>""", unsafe_allow_html=True)
 
-@st.cache_data(show_spinner=False)
 def beach_html():
     return Path(__file__).with_name("beach.html").read_text(encoding="utf-8")
 
