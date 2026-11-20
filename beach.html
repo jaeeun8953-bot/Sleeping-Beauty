@@ -477,6 +477,7 @@ option {
 <button id="undo-place" class="place-action" aria-label="마지막 배치 취소" title="마지막 배치 취소" disabled>↶</button>
 <button id="clear-places" class="place-action" aria-label="모두 비우기" title="모두 비우기" disabled>×</button>
 </div><div class="sand-tools">
+<button id="save-beach" class="sand-pen" aria-label="해변 저장" aria-live="polite">저장</button>
 <button data-place="write" class="sand-pen" aria-label="모래에 글씨 쓰기" aria-pressed="false">✎ 모래 글씨</button>
 <div id="sand-options" hidden><label for="sand-width">굵기</label><input id="sand-width" type="range" min="2" max="12" value="5" aria-label="모래 글씨 굵기"><button id="undo-writing" aria-label="마지막 글씨 획 취소" title="마지막 글씨 획 취소" disabled>↶</button><button id="clear-writing" aria-label="모래 글씨 지우기" disabled>글씨 지우기</button></div>
 </div><p id="placement-hint" role="status">아이콘을 고른 뒤 원하는 곳을 눌러주세요</p>
@@ -754,11 +755,12 @@ setInterval(() => {
   // Scene objects belong to the user. No preset boats, kayaks or parasails.
   const assets={yacht:sail,paraw:classic,outrigger,kayak,parasail};
   const names={yacht:'요트',paraw:'돛배',outrigger:'아웃리거',kayak:'투명 카약',parasail:'패러세일'};
-  const storageKey='neri-user-arrangement-v1';
+  const storageKey='neri-explicit-save-v1';
   let selected='pan',placed=[],history=[],nextId=1;
   const hint=document.querySelector('#placement-hint');
-  try{const saved=JSON.parse(localStorage.getItem(storageKey)||'[]');if(Array.isArray(saved))placed=saved.filter(o=>assets[o.type]&&Number.isFinite(o.x)&&Number.isFinite(o.y)&&o.x>=0&&o.x<=1&&o.y>=0&&o.y<=1).map(o=>({...o,born:0}));nextId=placed.reduce((n,o)=>Math.max(n,(o.id||0)+1),1)}catch{}
-  function save(){try{localStorage.setItem(storageKey,JSON.stringify(placed.map(({born,...o})=>o)))}catch{}}
+  try{const saved=(JSON.parse(localStorage.getItem(storageKey)||'{}').objects||[]);if(Array.isArray(saved))placed=saved.filter(o=>assets[o.type]&&Number.isFinite(o.x)&&Number.isFinite(o.y)&&o.x>=0&&o.x<=1&&o.y>=0&&o.y<=1).map(o=>({...o,born:0}));nextId=placed.reduce((n,o)=>Math.max(n,(o.id||0)+1),1)}catch{}
+  function markUnsaved(){const b=document.querySelector('#save-beach');b.textContent='저장';b.setAttribute('aria-label','해변 저장')}
+  function save(){markUnsaved()}
   function updateTools(message){document.querySelector('#undo-place').disabled=!history.length;document.querySelector('#clear-places').disabled=!placed.length;hint.textContent=message??(selected==='write'?'모래 위를 손가락으로 그려보세요 · ✋로 둘러보기':selected==='pan'?'드래그로 둘러보기 · 아이콘을 고르면 배치':selected==='parasail'?'하늘을 누를 때마다 패러세일 추가':`바다를 누를 때마다 ${names[selected]} 1척 추가`);canvas.dataset.objectCount=String(placed.length);canvas.dataset.selectedTool=selected;dirty=true}
   function choose(type){finishWriting();selected=type;document.querySelector('#world').classList.toggle('writing-mode',type==='write');host.classList.toggle('writing',type==='write');document.querySelector('#sand-options').hidden=type!=='write';if(type==='write'){scale=Math.min(maxScale,defaultScale*1.45);targetX=.62;targetY=.82;constrain();centerX=targetX;centerY=targetY}host.classList.toggle('placing',type!=='pan');document.querySelectorAll('[data-place]').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.place===type)));updateTools()}
   document.querySelectorAll('[data-place]').forEach(b=>b.onclick=()=>choose(b.dataset.place==='write'&&selected==='write'?'pan':b.dataset.place));
@@ -768,14 +770,19 @@ setInterval(() => {
   document.querySelector('#clear-places').onclick=()=>{if(!placed.length)return;checkpoint();placed=[];save();updateTools('빈 바다로 돌아왔어요 · 취소 버튼으로 되돌릴 수 있어요')};
   addEventListener('keydown',e=>{if(e.target.matches('input,textarea,select'))return;if(e.key==='Escape')choose('pan');if(selected!=='write'&&(e.ctrlKey||e.metaKey)&&e.key.toLowerCase()==='z'){e.preventDefault();undo()}});
   // Handwriting is stored in image coordinates and rendered as recessed sand grooves.
-  const sandKey='neri-sand-writing-v1';
+  const sandKey=storageKey;
   let strokes=[],sandHistory=[],activeStroke=null,inkDirty=true;
   const inkCanvas=document.createElement('canvas'),ink=inkCanvas.getContext('2d');
-  try{const saved=JSON.parse(localStorage.getItem(sandKey)||'[]');if(Array.isArray(saved))strokes=saved.filter(s=>Number.isFinite(s.width)&&Array.isArray(s.points)&&s.points.length&&s.points.every(p=>Array.isArray(p)&&p.length===2&&p.every(Number.isFinite)&&p[0]>=0&&p[0]<=1&&p[1]>=0&&p[1]<=1))}catch{}
+  try{const saved=(JSON.parse(localStorage.getItem(sandKey)||'{}').strokes||[]);if(Array.isArray(saved))strokes=saved.filter(s=>Number.isFinite(s.width)&&Array.isArray(s.points)&&s.points.length&&s.points.every(p=>Array.isArray(p)&&p.length===2&&p.every(Number.isFinite)&&p[0]>=0&&p[0]<=1&&p[1]>=0&&p[1]<=1))}catch{}
   function sandButtons(){document.querySelector('#undo-writing').disabled=!sandHistory.length;document.querySelector('#clear-writing').disabled=!strokes.length;canvas.dataset.strokeCount=String(strokes.length)}
-  function saveSand(){try{localStorage.setItem(sandKey,JSON.stringify(strokes))}catch{}sandButtons();inkDirty=true;dirty=true}
+  function saveSand(){markUnsaved();sandButtons();inkDirty=true;dirty=true}
+  document.querySelector('#save-beach').onclick=()=>{
+    finishWriting();const button=document.querySelector('#save-beach');
+    try{localStorage.setItem(storageKey,JSON.stringify({objects:placed.map(({born,...o})=>o),strokes}));button.textContent='저장됨';button.setAttribute('aria-label','해변 저장 완료')}
+    catch{button.textContent='재시도';button.setAttribute('aria-label','저장 실패, 다시 시도');alert('저장하지 못했어요. 브라우저 저장 공간을 확인하고 다시 눌러주세요.')}
+  };
   function sandPoint(clientX,clientY){if(!photo.naturalWidth)return null;const rect=host.getBoundingClientRect(),W=photo.naturalWidth,H=photo.naturalHeight;const x=(clientX-rect.left-width/2+centerX*W*scale)/(W*scale),y=(clientY-rect.top-height/2+centerY*H*scale)/(H*scale);const clearSand=x>=.40?y>=.745:y>=.825;return clearSand&&x>.025&&x<.975&&y<.985?[x,y]:null}
-  function beginWriting(x,y){const point=sandPoint(x,y);if(!point){updateTools('글씨는 아래쪽의 빈 모래 위에 써주세요');return}sandHistory.push(strokes.slice());if(sandHistory.length>100)sandHistory.shift();activeStroke={width:Number(document.querySelector('#sand-width').value),points:[point]};strokes.push(activeStroke);sandButtons();inkDirty=true;dirty=true}
+  function beginWriting(x,y){markUnsaved();const point=sandPoint(x,y);if(!point){updateTools('글씨는 아래쪽의 빈 모래 위에 써주세요');return}sandHistory.push(strokes.slice());if(sandHistory.length>100)sandHistory.shift();activeStroke={width:Number(document.querySelector('#sand-width').value),points:[point]};strokes.push(activeStroke);sandButtons();inkDirty=true;dirty=true}
   function continueWriting(x,y){if(!activeStroke)return;const point=sandPoint(x,y);if(!point){finishWriting();return}const previous=activeStroke.points.at(-1);if(Math.hypot(point[0]-previous[0],point[1]-previous[1])<.00035)return;activeStroke.points.push(point);inkDirty=true;dirty=true}
   function finishWriting(){if(!activeStroke)return;activeStroke=null;saveSand()}
   document.querySelector('#undo-writing').onclick=()=>{finishWriting();if(!sandHistory.length)return;strokes=sandHistory.pop();saveSand();updateTools('마지막 글씨 획을 되돌렸어요')};
@@ -896,7 +903,7 @@ setInterval(() => {
 #beach-welcome button{border:0;border-radius:16px;padding:11px 35px;background:#f3dfbf;color:#364447;font-size:16px;min-height:44px}
 </style>
 <dialog id="beach-welcome" aria-label="해변 이용 안내" aria-describedby="beach-welcome-text">
-<p id="beach-welcome-text">드래그로 둘러보고<br>아이콘을 바다와 하늘에 배치해 보세요.<br>모래 글씨로 작은 추억도 새기세요.</p>
+<p id="beach-welcome-text">드래그로 둘러보고<br>아이콘을 바다와 하늘에 배치해 보세요.<br>모래 글씨로 작은 추억도 새기세요.<br>간직하고 싶을 때는 저장을 눌러주세요.</p>
 <form method="dialog"><button autofocus>확인</button></form>
 </dialog>
 <script>document.querySelector('#beach-welcome').showModal();</script>
