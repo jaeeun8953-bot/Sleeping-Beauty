@@ -486,7 +486,7 @@ option {
 <button data-mold="square" aria-label="네모 바가지" aria-pressed="true">🪣<span>네모 ▪</span></button>
 <button data-mold="round" aria-label="둥근 바가지" aria-pressed="false">🪣<span>둥근 ●</span></button>
 <button data-mold="triangle" aria-label="세모 바가지" aria-pressed="false">🪣<span>세모 ▲</span></button>
-<p>모래를 한 번 눌러 담고<br>원하는 곳에 한 번 더 놓아요</p></div><div class="sand-tools">
+<p>모래를 눌러 담고, 다시 눌러 부어요<br>만든 모래 위에도 쌓을 수 있어요</p></div><div class="sand-tools">
 <button id="save-beach" class="sand-pen" aria-label="해변 저장" aria-live="polite">저장</button>
 <button data-place="write" class="sand-pen" aria-label="모래에 글씨 쓰기" aria-pressed="false">✎ 모래 글씨</button>
 <div id="sand-options" hidden><label for="sand-width">굵기</label><input id="sand-width" type="range" min="2" max="12" value="5" aria-label="모래 글씨 굵기"><button id="undo-writing" aria-label="마지막 글씨 획 취소" title="마지막 글씨 획 취소" disabled>↶</button><button id="clear-writing" aria-label="모래 글씨 지우기" disabled>글씨 지우기</button></div>
@@ -766,16 +766,20 @@ setInterval(() => {
   const assets={castle:true,yacht:sail,paraw:classic,outrigger,kayak,parasail};
   const names={castle:'모래성',yacht:'요트',paraw:'돛배',outrigger:'아웃리거',kayak:'투명 카약',parasail:'패러세일'};
   const storageKey='neri-explicit-save-v1';
-  let selected='pan',placed=[],history=[],nextId=1,bucketFull=false,scoopPoint=null,moldShape='square';
+  let selected='pan',placed=[],history=[],nextId=1,bucketFull=false,scoopPoint=null,moldShape='square',pouring=false;
+  const bucketVisual=document.querySelector('#bucket-visual');
+  function moveBucket(e){if(selected!=='castle'||pouring)return;bucketVisual.style.left=e.clientX+'px';bucketVisual.style.top=e.clientY+'px'}
+  host.addEventListener('pointermove',moveBucket);host.addEventListener('pointerdown',moveBucket);
+  function animateBucket(kind){bucketVisual.classList.remove('scooping','pouring');void bucketVisual.offsetWidth;bucketVisual.classList.add(kind);bucketVisual.classList.toggle('filled',bucketFull)}
   function bucketNotice(text){const n=document.querySelector('#bucket-notice');n.textContent=text;n.hidden=false;clearTimeout(bucketNotice.timer);bucketNotice.timer=setTimeout(()=>n.hidden=true,3200)}
   const hint=document.querySelector('#placement-hint');
   try{const saved=(JSON.parse(localStorage.getItem(storageKey)||'{}').objects||[]);if(Array.isArray(saved))placed=saved.filter(o=>assets[o.type]&&Number.isFinite(o.x)&&Number.isFinite(o.y)&&o.x>=0&&o.x<=1&&o.y>=0&&o.y<=1).map(o=>({...o,born:0}));nextId=placed.reduce((n,o)=>Math.max(n,(o.id||0)+1),1)}catch{}
   function markUnsaved(){const b=document.querySelector('#save-beach');b.textContent='저장';b.setAttribute('aria-label','해변 저장')}
   function save(){markUnsaved()}
   function updateTools(message){document.querySelector('#undo-place').disabled=!history.length;document.querySelector('#clear-places').disabled=!placed.length;hint.textContent=message??(selected==='write'?'모래 위를 손가락으로 그려보세요 · ✋로 둘러보기':selected==='pan'?'드래그로 둘러보기 · 아이콘을 고르면 배치':selected==='parasail'?'하늘을 누를 때마다 패러세일 추가':`바다를 누를 때마다 ${names[selected]} 1척 추가`);canvas.dataset.objectCount=String(placed.length);canvas.dataset.selectedTool=selected;dirty=true}
-  function choose(type){finishWriting();bucketFull=false;document.querySelector('[data-place=castle]').setAttribute('aria-label','바가지로 모래성 쌓기');selected=type;document.querySelector('#mold-options').hidden=type!=='castle';document.querySelector('#world').classList.toggle('writing-mode',type==='write');host.classList.toggle('writing',type==='write');document.querySelector('#sand-options').hidden=type!=='write';if(type==='write'||type==='castle'){scale=Math.min(maxScale,defaultScale*1.45);targetX=.62;targetY=.82;constrain();centerX=targetX;centerY=targetY}host.classList.toggle('placing',type!=='pan');document.querySelectorAll('[data-place]').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.place===type)));updateTools()}
+  function choose(type){finishWriting();bucketFull=false;document.querySelector('[data-place=castle]').setAttribute('aria-label','바가지로 모래성 쌓기');selected=type;bucketVisual.hidden=type!=='castle';bucketVisual.classList.remove('filled','scooping','pouring');if(type==='castle'){bucketVisual.style.left=(width*.55)+'px';bucketVisual.style.top=(height*.7)+'px'}document.querySelector('#mold-options').hidden=type!=='castle';document.querySelector('#world').classList.toggle('writing-mode',type==='write');host.classList.toggle('writing',type==='write');document.querySelector('#sand-options').hidden=type!=='write';if(type==='write'||type==='castle'){scale=Math.min(maxScale,defaultScale*1.45);targetX=.62;targetY=.82;constrain();centerX=targetX;centerY=targetY}host.classList.toggle('placing',type!=='pan');document.querySelectorAll('[data-place]').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.place===type)));updateTools()}
   document.querySelectorAll('[data-place]').forEach(b=>b.onclick=()=>choose((b.dataset.place==='write'||b.dataset.place==='castle')&&selected===b.dataset.place?'pan':b.dataset.place));
-  document.querySelectorAll('[data-mold]').forEach(b=>b.onclick=()=>{moldShape=b.dataset.mold;bucketFull=false;document.querySelectorAll('[data-mold]').forEach(o=>o.setAttribute('aria-pressed',String(o===b)));bucketNotice(b.textContent.trim()+' 선택 · 모래를 눌러 담아주세요')});
+  document.querySelectorAll('[data-mold]').forEach(b=>b.onclick=()=>{moldShape=b.dataset.mold;bucketVisual.dataset.shape=moldShape;bucketFull=false;bucketVisual.classList.remove('filled');document.querySelectorAll('[data-mold]').forEach(o=>o.setAttribute('aria-pressed',String(o===b)));bucketNotice(b.textContent.trim()+' 선택 · 모래를 눌러 담아주세요')});
   function checkpoint(){history.push(placed.map(o=>({...o})));if(history.length>100)history.shift()}
   function undo(){if(!history.length)return;placed=history.pop();save();updateTools('마지막 배치를 취소했어요')}
   document.querySelector('#undo-place').onclick=undo;
@@ -826,10 +830,22 @@ setInterval(() => {
     const dx=width/2-centerX*W*scale,dy=height/2-centerY*H*scale;
     const x=(clientX-rect.left-dx)/(W*scale),y=(clientY-rect.top-dy)/(H*scale);
     if(selected==='castle'){
+      if(pouring)return;
       const point=sandPoint(clientX,clientY);
-      if(!point){bucketNotice('아래쪽의 빈 모래를 눌러주세요');return}
-      if(!bucketFull){bucketFull=true;scoopPoint=point;dirty=true;document.querySelector('[data-place=castle]').setAttribute('aria-label','모래를 담은 바가지 · 모래성을 놓을 곳 선택');bucketNotice('모래를 담았어요. 모래성을 놓을 곳을 눌러주세요');return}
-      checkpoint();placed.push({id:nextId++,type:'castle',shape:moldShape,x:point[0],y:point[1],size:.025+point[1]*.012,phase:nextId*2.31});bucketFull=false;save();updateTools();document.querySelector('[data-place=castle]').setAttribute('aria-label','바가지로 모래성 쌓기');bucketNotice('모래를 찍었어요. 모양을 겹쳐 나만의 모래성을 만들어 보세요');return
+      if(!bucketFull){
+        if(!point){bucketNotice('빈 모래를 눌러 바가지에 담아주세요');return}
+        bucketFull=true;scoopPoint=point;dirty=true;animateBucket('scooping');bucketNotice('모래를 담았어요. 빈 모래나 만든 모래 덩어리를 눌러 부어주세요');return
+      }
+      const support=placed.filter(o=>o.type==='castle').sort((a,b)=>(b.elevation||0)-(a.elevation||0)||b.id-a.id).find(o=>{
+        const bottom=o.y-(o.elevation||0)*W/H;
+        return Math.abs(x-o.x)<o.size*.53&&y>bottom-o.size*W/H*.85&&y<bottom+o.size*W/H*.12;
+      });
+      if(!point&&!support){bucketNotice('빈 모래나 이미 만든 모래 덩어리를 눌러주세요');return}
+      const size=support?support.size*.92:.025+point[1]*.012;
+      const item={id:nextId++,type:'castle',shape:moldShape,x:support?support.x:point[0],y:support?support.y:point[1],size,elevation:support?(support.elevation||0)+support.size*(support.shape==='round'? .51:support.shape==='triangle'?.69:.60):0,phase:nextId*2.31};
+      pouring=true;animateBucket('pouring');bucketFull=false;
+      setTimeout(()=>{checkpoint();placed.push(item);pouring=false;bucketVisual.classList.remove('filled','pouring');save();updateTools();bucketNotice(support?'위에 쌓았어요! 다시 담아서 더 쌓아보세요':'모래를 부었어요. 만든 모래를 누르면 위로 쌓을 수 있어요')},480);
+      return
     }
     if(selected==='parasail'){
       if(x<.07||x>.96||y<.08||y>.535){updateTools('패러세일은 하늘을 눌러 배치해 주세요');return}
@@ -872,9 +888,9 @@ setInterval(() => {
     ctx.restore();
   }
   function drawCastle(item,dx,dy){
-    const x=item.x*photo.naturalWidth*scale+dx,y=item.y*photo.naturalHeight*scale+dy,w=item.size*photo.naturalWidth*scale,shape=item.shape||'square';
+    const x=item.x*photo.naturalWidth*scale+dx,y=item.y*photo.naturalHeight*scale+dy-(item.elevation||0)*photo.naturalWidth*scale,w=item.size*photo.naturalWidth*scale,shape=item.shape||'square';
     ctx.save();ctx.translate(x,y);ctx.scale(w/90,w/90);
-    ctx.fillStyle='#79553535';ctx.beginPath();ctx.ellipse(7,5,51,11,0,0,Math.PI*2);ctx.fill();
+    if(!(item.elevation>0)){ctx.fillStyle='#79553535';ctx.beginPath();ctx.ellipse(7,5,51,11,0,0,Math.PI*2);ctx.fill()}
     function outline(){ctx.beginPath();if(shape==='round'){ctx.moveTo(-37,-39);ctx.bezierCurveTo(-42,-8,-46,-2,-40,0);ctx.bezierCurveTo(-10,10,30,9,41,0);ctx.lineTo(35,-39);ctx.bezierCurveTo(15,-50,-18,-50,-37,-39)}else if(shape==='triangle'){ctx.moveTo(-45,0);ctx.lineTo(-2,-65);ctx.lineTo(45,0);ctx.quadraticCurveTo(0,9,-45,0)}else{ctx.moveTo(-42,0);ctx.lineTo(-35,-48);ctx.lineTo(32,-48);ctx.lineTo(43,0);ctx.closePath()}ctx.closePath()}
     const sand=ctx.createLinearGradient(-40,-30,43,0);sand.addColorStop(0,'#e3c395');sand.addColorStop(.45,'#cda677');sand.addColorStop(1,'#a97f54');outline();ctx.fillStyle=sand;ctx.fill();
     ctx.save();outline();ctx.clip();let seed=item.id*79+11;for(let i=0;i<420;i++){seed=(seed*16807)%2147483647;const gx=seed%94-47;seed=(seed*16807)%2147483647;const gy=-(seed%70);ctx.fillStyle=i%2?'#fff0cd45':'#805c3540';ctx.fillRect(gx,gy,.65,.65)}ctx.restore();
@@ -913,7 +929,7 @@ setInterval(() => {
     drawSand(dx,dy);
     if(scoopPoint){const sx=scoopPoint[0]*photo.naturalWidth*scale+dx,sy=scoopPoint[1]*photo.naturalHeight*scale+dy;ctx.save();ctx.fillStyle='#8f633b40';ctx.beginPath();ctx.ellipse(sx,sy,14*scale,5*scale,0,0,Math.PI*2);ctx.fill();ctx.strokeStyle='#efd2aa88';ctx.stroke();ctx.restore()}
 
-    const items=placed.map(o=>({...o,asset:assets[o.type]})).sort((a,b)=>a.y-b.y);
+    const items=placed.map(o=>({...o,asset:assets[o.type]})).sort((a,b)=>a.y-b.y||(a.elevation||0)-(b.elevation||0));
     for(const item of items)drawSprite(item,time,dx,dy);
     canvas.dataset.motion=motionOn?'playing':'paused';canvas.dataset.motionTime=time.toFixed(2);canvas.dataset.viewX=centerX.toFixed(3);canvas.dataset.viewY=centerY.toFixed(3);
   }
@@ -930,6 +946,17 @@ setInterval(() => {
 #beach-welcome::backdrop{background:#10242c66;backdrop-filter:blur(5px)}
 #beach-welcome p{margin:0 0 24px;word-break:keep-all}
 #beach-welcome button{border:0;border-radius:16px;padding:11px 35px;background:#f3dfbf;color:#364447;font-size:16px;min-height:44px}
+</style>
+<div id="bucket-visual" hidden aria-hidden="true" data-shape="square"><svg viewBox="0 0 100 120" width="76" height="92"><path d="M22 36 C20 -3 80 -3 78 36" fill="none" stroke="#f0dcc0" stroke-width="6"/><path d="M16 34 L25 96 Q50 108 75 96 L84 34 Z" fill="#d89e72" stroke="#f4d6b0" stroke-width="3"/><ellipse cx="50" cy="34" rx="34" ry="9" fill="#815a40" stroke="#f4d6b0" stroke-width="3"/><ellipse class="bucket-sand" cx="50" cy="33" rx="29" ry="6" fill="#e6c699"/><text class="bucket-square" x="50" y="78" text-anchor="middle" fill="#fff0d2" font-size="32">■</text><text class="bucket-round" x="50" y="78" text-anchor="middle" fill="#fff0d2" font-size="32">●</text><text class="bucket-triangle" x="50" y="78" text-anchor="middle" fill="#fff0d2" font-size="32">▲</text></svg><div class="sand-stream"></div></div>
+<style>
+#bucket-visual{position:fixed;z-index:18;left:55%;top:70%;width:76px;height:92px;pointer-events:none;transform:translate(-30%,-90%);filter:drop-shadow(3px 8px 4px #47331f44);transform-origin:50% 80%}
+.bucket-sand,.bucket-round,.bucket-triangle{display:none}.filled .bucket-sand{display:block}
+[data-shape=round] .bucket-square,[data-shape=triangle] .bucket-square{display:none}[data-shape=round] .bucket-round,[data-shape=triangle] .bucket-triangle{display:block}
+#bucket-visual.scooping{animation:scoop-bucket .6s ease-in-out}#bucket-visual.pouring{animation:pour-bucket .65s ease-in-out}
+.sand-stream{display:none;position:absolute;width:10px;height:65px;left:65px;top:30px;background:repeating-linear-gradient(0deg,#edcc9a 0 3px,#b88f63 4px 5px,transparent 6px 8px);transform:rotate(-70deg);transform-origin:top;border-radius:40%;opacity:.9}.pouring .sand-stream{display:block;animation:sand-fall .48s linear}
+@keyframes scoop-bucket{0%,100%{transform:translate(-30%,-90%) rotate(0)}50%{transform:translate(-30%,-45%) rotate(-32deg)}}
+@keyframes pour-bucket{0%,100%{transform:translate(-30%,-90%) rotate(0)}30%,75%{transform:translate(-30%,-100%) rotate(105deg)}}
+@keyframes sand-fall{0%{height:0;opacity:0}30%{height:65px;opacity:1}100%{height:85px;opacity:0}}
 </style>
 <div id="bucket-notice" role="status" hidden style="position:fixed;z-index:20;top:20px;left:50%;transform:translateX(-50%);width:max-content;max-width:calc(100% - 100px);padding:12px 18px;border-radius:18px;background:#233c43ed;color:#fff4df;text-align:center;font-size:14px;pointer-events:none"></div>
 <dialog id="beach-welcome" aria-label="해변 이용 안내" aria-describedby="beach-welcome-text">
