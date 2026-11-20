@@ -1,4 +1,4 @@
-# NERI · Streamlit
+#  Streamlit
 현재 NERI의 배경·소리·파도·배 배치·모래 글씨 기능을 그대로 내장한 Streamlit 실행판입니다. 외부 Sites 주소나 API 키 없이 작동합니다.
 
 ## GitHub → Streamlit 배포
