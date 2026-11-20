@@ -7,9 +7,9 @@ st.markdown("""<style>
 html, body, .stApp {background:#152b33;}
 [data-testid="stHeader"], [data-testid="stToolbar"], footer {display:none!important;}
 [data-testid="stMainBlockContainer"] {padding:0!important;max-width:100%!important;}
-[data-testid="stMain"] {overflow:hidden;}
+[data-testid="stMain"] {overflow:visible;}
 [data-testid="stVerticalBlock"] {gap:0!important;}
-iframe[title="streamlit.components.v1.html"] {width:100%!important;height:100dvh!important;border:0;display:block;}
+iframe {position:fixed!important;inset:0!important;width:100vw!important;height:100vh!important;height:100dvh!important;max-width:none!important;border:0;display:block;z-index:10;}
 </style>""", unsafe_allow_html=True)
 
 @st.cache_data(show_spinner=False)

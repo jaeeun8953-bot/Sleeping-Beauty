@@ -5,7 +5,7 @@
 1. GitHub에서 새 저장소를 만듭니다(예: neri-beach).
 2. ZIP을 풀고 이 폴더 안의 app.py, requirements.txt, beach.html, .streamlit 폴더를 저장소 최상위에 올립니다. ZIP 자체를 올리지 마세요.
 3. https://share.streamlit.io 에 GitHub 계정으로 로그인하고 Create app을 누릅니다.
-4. 저장소와 main 브랜치를 선택하고 Main file path를 app.py로 지정해 Deploy합니다.
+4. 저장소와 main 브랜치를 선택하고 Main file path를 app.py로 지정합니다. Advanced settings에서 Python 3.12를 선택한 후 Deploy합니다.
 
 ## 로컬 실행
 python -m pip install -r requirements.txt
